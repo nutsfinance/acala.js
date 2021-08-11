@@ -38,7 +38,8 @@ function genFnFromBigNumber<T extends keyof BigNumber, U extends boolean>(
   return function (right: FixedPointNumber) {
     /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/ban-ts-comment */
     // @ts-ignore
-    this.alignPrecision(right);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    right = this.alignPrecision(right);
     // @ts-ignore
     return this.inner[fn](right._getInner());
     /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/ban-ts-comment */
@@ -186,10 +187,14 @@ export class FixedPointNumber {
   }
 
   // set b's precision to this.precision
-  private alignPrecision(b: FixedPointNumber): void {
+  private alignPrecision(b: FixedPointNumber): FixedPointNumber {
+    const _b = b.clone();
+
     if (this.precision !== b.precision) {
-      b.setPrecision(this.precision);
+      _b.setPrecision(this.precision);
     }
+
+    return _b;
   }
 
   /**
@@ -234,8 +239,8 @@ export class FixedPointNumber {
    * @description return a FixedPointNumber whose value is origin value plus right value
    */
   public plus(right: FixedPointNumber): FixedPointNumber {
-    this.alignPrecision(right);
     this.setMode();
+    right = this.alignPrecision(right);
 
     return FixedPointNumber._fromBN(this.inner.plus(right.inner), this.precision);
   }
@@ -245,8 +250,8 @@ export class FixedPointNumber {
    * @description return a FixedPointNumber whose value is origin value minus right value
    */
   public minus(right: FixedPointNumber): FixedPointNumber {
-    this.alignPrecision(right);
     this.setMode();
+    right = this.alignPrecision(right);
 
     return FixedPointNumber._fromBN(this.inner.minus(right.inner), this.precision);
   }
@@ -256,8 +261,8 @@ export class FixedPointNumber {
    * @description return a FixedPointNumber whose value is origin value times right value
    */
   public times(right: FixedPointNumber): FixedPointNumber {
-    this.alignPrecision(right);
     this.setMode();
+    right = this.alignPrecision(right);
 
     return FixedPointNumber._fromBN(this.inner.times(right.inner).shiftedBy(-this.precision), this.precision);
   }
@@ -267,8 +272,8 @@ export class FixedPointNumber {
    * @description return a FixedPointNumber whose value is origin value div right value
    */
   public div(right: FixedPointNumber): FixedPointNumber {
-    this.alignPrecision(right);
     this.setMode();
+    right = this.alignPrecision(right);
 
     return FixedPointNumber._fromBN(this.inner.shiftedBy(this.precision).div(right.inner), this.precision);
   }
@@ -341,7 +346,7 @@ export class FixedPointNumber {
    * @name min
    */
   public min(...targets: FixedPointNumber[]): FixedPointNumber {
-    targets.forEach((item) => this.alignPrecision(item));
+    targets = targets.map((item) => this.alignPrecision(item));
 
     return FixedPointNumber._fromBN(
       BigNumber.min.apply(null, [this.inner, ...targets.map((i) => i._getInner())]),
@@ -353,7 +358,7 @@ export class FixedPointNumber {
    * @name max
    */
   public max(...targets: FixedPointNumber[]): FixedPointNumber {
-    targets.forEach((item) => this.alignPrecision(item));
+    targets = targets.map((item) => this.alignPrecision(item));
 
     return FixedPointNumber._fromBN(
       BigNumber.max.apply(null, [this.inner, ...targets.map((i) => i._getInner())]),
